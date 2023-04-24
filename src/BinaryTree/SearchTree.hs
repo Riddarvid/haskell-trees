@@ -1,56 +1,63 @@
+{-# LANGUAGE InstanceSigs #-}
+
 module BinaryTree.SearchTree (
-  add,
-  find,
-  contains,
-  delete
+  SearchTreeClass(..),
+  SearchTree
 ) where
-import           BinaryTree.BinaryTree          (makeLeaf, makeNode)
-import           BinaryTree.Internal.BinaryTree (BinaryTree (..))
+import           BinaryTree.BinaryTree          (BinaryTreeClass (..))
+import           BinaryTree.Internal.BinaryNode (BinaryNode)
+import           BinaryTree.Internal.Defaults   (NodeTree (..))
+import qualified BinaryTree.Internal.Defaults   as D
+import qualified BinaryTree.Internal.SearchNode as N
+import           BinaryTree.Traversal           (TraverseOrder)
 import           Data.Maybe                     (isJust)
 
--- Add the given node into the search tree. Replaces if already existing.
-add :: (Ord a) => a -> BinaryTree a -> BinaryTree a
-add e BEmpty = makeLeaf e
-add e (BNode root t1 t2) = case compare e root of
-  EQ -> makeNode e t1 t2
-  LT -> let t1' = add e t1 in makeNode root t1' t2
-  GT -> let t2' = add e t2 in makeNode root t1 t2'
+class SearchTreeClass t where
+  add :: (Ord a) => a -> t a -> t a
+  find :: (Ord a) => a -> t a -> Maybe a
+  contains :: (Ord a) => a -> t a -> Bool
+  contains e = isJust . find e
+  delete :: (Ord a) => a -> t a -> Maybe (a, t a)
+  fromList :: (Ord a) => [a] -> t a
 
-find :: (Ord a) => a -> BinaryTree a -> Maybe a
-find _ BEmpty = Nothing
-find e (BNode root n1 n2) = case compare e root of
-  EQ -> Just root
-  LT -> find e n1
-  GT -> find e n2
+newtype SearchTree a = ST (BinaryNode a)
 
-contains :: (Ord a) => a -> BinaryTree a -> Bool
-contains e tree = isJust $ find e tree
+instance NodeTree SearchTree where
+  rootNode :: SearchTree a -> BinaryNode a
+  rootNode (ST n) = n
+  makeTree :: BinaryNode a -> SearchTree a
+  makeTree = ST
 
--- If the element is in the tree, return just the tree and the deleted element.
--- Otherwise return Nothing.
-delete :: (Ord a) => a -> BinaryTree a -> Maybe (a, BinaryTree a)
-delete _ BEmpty = Nothing
-delete e rootNode@(BNode root lt rt) = case compare e root of
-  EQ -> Just (root, deleteRoot rootNode)
-  LT -> do
-    (deleted, lt') <- delete e lt
-    return (deleted, makeNode root lt' rt)
-  GT -> do
-    (deleted, rt') <- delete e rt
-    return (deleted, makeNode root lt rt')
+instance BinaryTreeClass SearchTree where
+  makeEmpty :: SearchTree a
+  makeEmpty = D.makeEmpty
+  makeNode :: a -> SearchTree a -> SearchTree a -> SearchTree a
+  makeNode = D.makeNode
+  makeLeaf :: a -> SearchTree a
+  makeLeaf = D.makeLeaf
+  leftSubTree :: SearchTree a -> Maybe (SearchTree a)
+  leftSubTree = D.leftSubTree
+  rightSubTree :: SearchTree a -> Maybe (SearchTree a)
+  rightSubTree = D.rightSubTree
+  rootData :: SearchTree a -> Maybe a
+  rootData = D.rootData
+  isLeaf :: SearchTree a -> Bool
+  isLeaf = D.isLeaf
+  traverseTree :: TraverseOrder -> SearchTree a -> [(a, Int)]
+  traverseTree = D.traverseTree
+  numberOfNodes :: SearchTree a -> Int
+  numberOfNodes = D.numberOfNodes
+  prettyShow :: Show a => TraverseOrder -> SearchTree a -> String
+  prettyShow = D.prettyShow
 
-deleteRoot :: BinaryTree a -> BinaryTree a
-deleteRoot BEmpty                  = error "Delete root of empty tree"
-deleteRoot (BNode _ BEmpty BEmpty) = BEmpty -- No children - delete
-deleteRoot (BNode _ BEmpty rt)     = rt     -- One child - link past
-deleteRoot (BNode _ lt BEmpty)     = lt     -- One child - link past
-deleteRoot (BNode _ lt rt) = makeNode maxVal lt' rt
-  where
-    (maxVal, lt') = deleteMax lt
-
-deleteMax :: BinaryTree a -> (a, BinaryTree a)
-deleteMax BEmpty = error "Delete max of empty tree"
-deleteMax (BNode root lt BEmpty) = (root, lt) -- Max element found
-deleteMax (BNode root lt rt) = (maxVal, makeNode root lt rt')
-  where
-    (maxVal, rt') = deleteMax rt
+instance SearchTreeClass SearchTree where
+  add :: Ord a => a -> SearchTree a -> SearchTree a
+  add e = makeTree . N.add e . rootNode
+  find :: Ord a => a -> SearchTree a -> Maybe a
+  find e = N.find e . rootNode
+  delete :: Ord a => a -> SearchTree a -> Maybe (a, SearchTree a)
+  delete e tree = case N.delete e (rootNode tree) of
+    Nothing          -> Nothing
+    Just (e', root') -> Just (e', makeTree root')
+  fromList :: Ord a => [a] -> SearchTree a
+  fromList = makeTree . N.fromList
