@@ -15,6 +15,7 @@ module BinaryTree.Internal.BinaryNode (
   rightSubTree,
   rootData,
   isLeaf,
+  isEmpty,
   -- Traversal
   traverseTree,
   -- Utils
@@ -29,6 +30,7 @@ class NodeTree t where
   makeTree :: BinaryNode a -> t a
 
 data BinaryNode a = BNode a (BinaryNode a) (BinaryNode a) | BEmpty
+  deriving (Show)
 
 instance Functor BinaryNode where
   fmap :: (a -> b) -> BinaryNode a -> BinaryNode b
@@ -64,6 +66,10 @@ isLeaf :: BinaryNode a -> Bool
 isLeaf BEmpty                  = False
 isLeaf (BNode _ BEmpty BEmpty) = True
 isLeaf _                       = False
+
+isEmpty :: BinaryNode a -> Bool
+isEmpty BEmpty = True
+isEmpty _      = False
 
 -- Traversal
 
