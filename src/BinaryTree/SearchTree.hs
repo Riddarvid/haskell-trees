@@ -9,6 +9,7 @@ import           BinaryTree.Internal.BinaryNode (BinaryNode,
                                                  NodeTree (makeTree, rootNode))
 import qualified BinaryTree.Internal.SearchNode as N
 import           Data.Maybe                     (isJust)
+import           Test.QuickCheck                (Arbitrary (arbitrary), Gen)
 
 class (NodeTree t) => SearchTreeClass t where
   add :: (Ord a) => a -> t a -> t a
@@ -25,6 +26,7 @@ class (NodeTree t) => SearchTreeClass t where
   fromList = makeTree . N.fromList
 
 newtype SearchTree a = ST (BinaryNode a)
+  deriving (Show)
 
 instance NodeTree SearchTree where
   rootNode :: SearchTree a -> BinaryNode a
@@ -35,3 +37,9 @@ instance NodeTree SearchTree where
 instance BinaryTreeClass SearchTree
 
 instance SearchTreeClass SearchTree
+
+-- QuickCheck
+
+instance (Arbitrary a, Ord a) => Arbitrary (SearchTree a) where
+  arbitrary :: Gen (SearchTree a)
+  arbitrary = fromList <$> arbitrary

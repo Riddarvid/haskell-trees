@@ -1,12 +1,18 @@
 import           BinaryTree.BinaryTree (BinaryTree,
-                                        BinaryTreeClass (isEmpty, leftSubTree, numberOfNodes, rightSubTree))
+                                        BinaryTreeClass (isEmpty, leftSubTree, numberOfNodes, rightSubTree, traverseTree))
+import           BinaryTree.SearchTree (SearchTree)
+import           BinaryTree.Traversal  (TraverseOrder (Inorder))
+import           Data.List             (sort)
 import           Data.Maybe            (fromJust)
 import           Test.QuickCheck       (Property, quickCheck, (===), (==>))
 main :: IO ()
 main = do
   quickCheck propSubTreeSize
+  quickCheck propIsOrdered
 
 type TreeContent = Int
+
+-- Generic binary tree - not ordered.
 
 propSubTreeSize :: BinaryTree TreeContent -> Property
 propSubTreeSize tree = (not . isEmpty) tree ==> treeNodes === 1 + leftNodes + rightNodes
@@ -16,3 +22,10 @@ propSubTreeSize tree = (not . isEmpty) tree ==> treeNodes === 1 + leftNodes + ri
     rt = fromJust $ rightSubTree tree
     leftNodes = numberOfNodes lt
     rightNodes = numberOfNodes rt
+
+-- Search tree - ordered, not self balancing.
+
+propIsOrdered :: SearchTree TreeContent -> Property
+propIsOrdered = isOrdered . map fst . traverseTree Inorder
+  where
+    isOrdered nodes = nodes === sort nodes
