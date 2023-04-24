@@ -2,6 +2,8 @@
 {-# LANGUAGE TupleSections #-}
 
 module BinaryTree.Internal.BinaryNode (
+  -- Class
+  NodeTree(..),
   -- Data types
   BinaryNode(..),
   -- Constructors
@@ -21,6 +23,10 @@ module BinaryTree.Internal.BinaryNode (
 ) where
 import           BinaryTree.Traversal (TraverseOrder (..))
 import           Data.Maybe           (catMaybes)
+
+class NodeTree t where
+  rootNode :: t a -> BinaryNode a
+  makeTree :: BinaryNode a -> t a
 
 data BinaryNode a = BNode a (BinaryNode a) (BinaryNode a) | BEmpty
 
@@ -73,11 +79,11 @@ traverseTreeMaybes = traverseTree' 0
 
 traverseTree' :: Int -> TraverseOrder -> BinaryNode a -> [(Maybe a, Int)]
 traverseTree' depth _ BEmpty = [(Nothing, depth)]
-traverseTree' depth order rootNode@(BNode e t1 t2) = case order of
+traverseTree' depth order rn@(BNode e t1 t2) = case order of
   Inorder      -> leftList ++ rootList ++ rightList
   Preorder     -> rootList ++ leftList ++ rightList
   Postorder    -> leftList ++ rightList ++ rootList
-  BreadthFirst -> traverseBreadth depth [rootNode]
+  BreadthFirst -> traverseBreadth depth [rn]
   where
     leftList = traverseTree' (depth + 1) order t1
     rightList = traverseTree' (depth + 1) order t2

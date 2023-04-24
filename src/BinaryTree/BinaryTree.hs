@@ -4,24 +4,39 @@ module BinaryTree.BinaryTree (
   BinaryTreeClass(..),
   BinaryTree
 ) where
-import           BinaryTree.Internal.BinaryNode (BinaryNode)
-import           BinaryTree.Internal.Defaults   (NodeTree)
-import qualified BinaryTree.Internal.Defaults   as D
+import           BinaryTree.Internal.BinaryNode (BinaryNode,
+                                                 NodeTree (makeTree, rootNode))
+import qualified BinaryTree.Internal.BinaryNode as N
 import           BinaryTree.Traversal           (TraverseOrder)
 
-class BinaryTreeClass t where
+class (NodeTree t) => BinaryTreeClass t where
   makeEmpty :: t a
+  makeEmpty = makeTree N.makeEmpty
   makeNode :: a -> t a -> t a -> t a
+  makeNode root lt rt = makeTree $ N.makeNode root ln rn
+    where
+      ln = rootNode lt
+      rn = rootNode rt
   makeLeaf :: a -> t a
+  makeLeaf =  makeTree . N.makeLeaf
 
   leftSubTree :: t a -> Maybe (t a)
+  leftSubTree tree = makeTree <$> N.leftSubTree (rootNode tree)
   rightSubTree :: t a -> Maybe (t a)
+  rightSubTree tree = makeTree <$> N.rightSubTree (rootNode tree)
   rootData :: t a -> Maybe a
+  rootData = N.rootData . rootNode
   isLeaf :: t a -> Bool
+  isLeaf = N.isLeaf . rootNode
 
   traverseTree :: TraverseOrder -> t a -> [(a, Int)]
+  traverseTree order tree = N.traverseTree order (rootNode tree)
   numberOfNodes :: t a -> Int
+  numberOfNodes = N.numberOfNodes . rootNode
   prettyShow :: Show a => TraverseOrder -> t a -> String
+  prettyShow order tree = N.prettyShow order (rootNode tree)
+
+-- Type
 
 newtype BinaryTree a = BT (BinaryNode a)
 
@@ -31,24 +46,4 @@ instance NodeTree BinaryTree where
   makeTree :: BinaryNode a -> BinaryTree a
   makeTree = BT
 
-instance BinaryTreeClass BinaryTree where
-  makeEmpty :: BinaryTree a
-  makeEmpty = D.makeEmpty
-  makeNode :: a -> BinaryTree a -> BinaryTree a -> BinaryTree a
-  makeNode = D.makeNode
-  makeLeaf :: a -> BinaryTree a
-  makeLeaf = D.makeLeaf
-  leftSubTree :: BinaryTree a -> Maybe (BinaryTree a)
-  leftSubTree = D.leftSubTree
-  rightSubTree :: BinaryTree a -> Maybe (BinaryTree a)
-  rightSubTree = D.rightSubTree
-  rootData :: BinaryTree a -> Maybe a
-  rootData = D.rootData
-  isLeaf :: BinaryTree a -> Bool
-  isLeaf = D.isLeaf
-  traverseTree :: TraverseOrder -> BinaryTree a -> [(a, Int)]
-  traverseTree = D.traverseTree
-  numberOfNodes :: BinaryTree a -> Int
-  numberOfNodes = D.numberOfNodes
-  prettyShow :: Show a => TraverseOrder -> BinaryTree a -> String
-  prettyShow = D.prettyShow
+instance BinaryTreeClass BinaryTree

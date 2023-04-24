@@ -5,20 +5,24 @@ module BinaryTree.SearchTree (
   SearchTree
 ) where
 import           BinaryTree.BinaryTree          (BinaryTreeClass (..))
-import           BinaryTree.Internal.BinaryNode (BinaryNode)
-import           BinaryTree.Internal.Defaults   (NodeTree (..))
-import qualified BinaryTree.Internal.Defaults   as D
+import           BinaryTree.Internal.BinaryNode (BinaryNode,
+                                                 NodeTree (makeTree, rootNode))
 import qualified BinaryTree.Internal.SearchNode as N
-import           BinaryTree.Traversal           (TraverseOrder)
 import           Data.Maybe                     (isJust)
 
-class SearchTreeClass t where
+class (NodeTree t) => SearchTreeClass t where
   add :: (Ord a) => a -> t a -> t a
+  add e = makeTree . N.add e . rootNode
   find :: (Ord a) => a -> t a -> Maybe a
+  find e = N.find e . rootNode
   contains :: (Ord a) => a -> t a -> Bool
   contains e = isJust . find e
   delete :: (Ord a) => a -> t a -> Maybe (a, t a)
+  delete e tree = case N.delete e (rootNode tree) of
+    Nothing          -> Nothing
+    Just (e', root') -> Just (e', makeTree root')
   fromList :: (Ord a) => [a] -> t a
+  fromList = makeTree . N.fromList
 
 newtype SearchTree a = ST (BinaryNode a)
 
@@ -28,36 +32,6 @@ instance NodeTree SearchTree where
   makeTree :: BinaryNode a -> SearchTree a
   makeTree = ST
 
-instance BinaryTreeClass SearchTree where
-  makeEmpty :: SearchTree a
-  makeEmpty = D.makeEmpty
-  makeNode :: a -> SearchTree a -> SearchTree a -> SearchTree a
-  makeNode = D.makeNode
-  makeLeaf :: a -> SearchTree a
-  makeLeaf = D.makeLeaf
-  leftSubTree :: SearchTree a -> Maybe (SearchTree a)
-  leftSubTree = D.leftSubTree
-  rightSubTree :: SearchTree a -> Maybe (SearchTree a)
-  rightSubTree = D.rightSubTree
-  rootData :: SearchTree a -> Maybe a
-  rootData = D.rootData
-  isLeaf :: SearchTree a -> Bool
-  isLeaf = D.isLeaf
-  traverseTree :: TraverseOrder -> SearchTree a -> [(a, Int)]
-  traverseTree = D.traverseTree
-  numberOfNodes :: SearchTree a -> Int
-  numberOfNodes = D.numberOfNodes
-  prettyShow :: Show a => TraverseOrder -> SearchTree a -> String
-  prettyShow = D.prettyShow
+instance BinaryTreeClass SearchTree
 
-instance SearchTreeClass SearchTree where
-  add :: Ord a => a -> SearchTree a -> SearchTree a
-  add e = makeTree . N.add e . rootNode
-  find :: Ord a => a -> SearchTree a -> Maybe a
-  find e = N.find e . rootNode
-  delete :: Ord a => a -> SearchTree a -> Maybe (a, SearchTree a)
-  delete e tree = case N.delete e (rootNode tree) of
-    Nothing          -> Nothing
-    Just (e', root') -> Just (e', makeTree root')
-  fromList :: Ord a => [a] -> SearchTree a
-  fromList = makeTree . N.fromList
+instance SearchTreeClass SearchTree
