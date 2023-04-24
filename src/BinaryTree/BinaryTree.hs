@@ -16,7 +16,7 @@ module BinaryTree.BinaryTree (
 ) where
 
 import           BinaryTree.Internal.BinaryTree (BinaryTree (..))
-import           Data.Maybe                     (catMaybes, mapMaybe)
+import           Data.Maybe                     (catMaybes)
 
 data TraverseOrder = Inorder | Preorder | Postorder | BreadthFirst
 
@@ -47,10 +47,17 @@ isLeaf (BNode _ BEmpty BEmpty) = True
 isLeaf _                       = False
 
 traverseTree :: TraverseOrder -> BinaryTree a -> [(a, Int)]
-traverseTree = traverseTree' 0
+traverseTree order tree = foldr addJust [] nodes
+  where
+    nodes = traverseTreeMaybes order tree
+    addJust (Nothing, _) xs = xs
+    addJust (Just x, d) xs  = (x, d) : xs
 
-traverseTree' :: Int -> TraverseOrder -> BinaryTree a -> [(a, Int)]
-traverseTree' _ _ BEmpty = []
+traverseTreeMaybes :: TraverseOrder -> BinaryTree a -> [(Maybe a, Int)]
+traverseTreeMaybes = traverseTree' 0
+
+traverseTree' :: Int -> TraverseOrder -> BinaryTree a -> [(Maybe a, Int)]
+traverseTree' depth _ BEmpty = [(Nothing, depth)]
 traverseTree' depth order rootNode@(BNode e t1 t2) = case order of
   Inorder      -> leftList ++ rootList ++ rightList
   Preorder     -> rootList ++ leftList ++ rightList
@@ -59,13 +66,13 @@ traverseTree' depth order rootNode@(BNode e t1 t2) = case order of
   where
     leftList = traverseTree' (depth + 1) order t1
     rightList = traverseTree' (depth + 1) order t2
-    rootList = [(e, depth)]
+    rootList = [(Just e, depth)]
 
-traverseBreadth :: Int -> [BinaryTree a] -> [(a, Int)]
+traverseBreadth :: Int -> [BinaryTree a] -> [(Maybe a, Int)]
 traverseBreadth _ [] = []
 traverseBreadth depth nodes = current ++ traverseBreadth (depth + 1) childNodes
   where
-    current = map (, depth) $ mapMaybe rootData nodes
+    current = map ((, depth) . rootData) nodes
     childNodes = concatMap children nodes
 
 children :: BinaryTree a -> [BinaryTree a]
@@ -75,7 +82,7 @@ numberOfNodes :: BinaryTree a -> Int
 numberOfNodes = length . traverseTree Preorder
 
 prettyShow :: Show a => BinaryTree a -> String
-prettyShow = concatMap printNode . traverseTree Preorder
+prettyShow = concatMap printNode . traverseTreeMaybes Preorder
   where
     printNode (val, depth) = let
       dots = concat $ replicate depth ".\t"
